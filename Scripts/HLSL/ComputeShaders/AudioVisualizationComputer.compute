@@ -1,0 +1,105 @@
+#pragma kernel ComputeGrid
+
+struct GridElement {
+    float3 Position;
+    float Proximity;
+    float Running;
+    float Height;
+};
+
+
+RWStructuredBuffer<GridElement> GridElements;
+RWStructuredBuffer<float> SpectrumData;
+RWStructuredBuffer<float> VolumeData;
+//float Speed;
+float DeltaTime;
+float Time;
+float InnerRadHeight;
+float Radius;
+float Volume;
+float RMSVolume;
+float MaxHeight;
+//float Spectrum[2048];
+int GridElementCount;
+ 
+
+[numthreads(128, 1, 1)]
+void ComputeGrid(uint3 id : SV_DispatchThreadID)
+{
+    GridElement element = GridElements[id.x];
+    float3 pos = element.Position;
+    float TargetPosDefault;// = -10 + 3 * sin(element.Position.x / 7 + Time / 2 + element.Position.z / 7) + 2 * sin(element.Position.z / 2 + Time / 2) + cos(element.Position.x / 2 + Time / 2) + 1.5 * cos(id.x / 4 + Time / 3);
+    TargetPosDefault = 0;
+
+    //if (element.Running <= 0)
+    //{
+        //float SpectrumIDNotRounded = ((float)id.x * 1024.0 / (float)GridElementCount);
+        int SpectrumID = 2046-floor((float)id.x * 2048.0/ (float)(GridElementCount));
+
+        float Value = 0.75+1.25*(float)SpectrumID * (float)SpectrumID / (2048.0 * 2048.0);
+        /*if (Value < 1)
+            Value = 0;*/
+        //float FreqElement = (float)id.x * 24000.0 / (float)GridElementCount;
+        //float FreqSpectrum = (float)SpectrumID * 24000.0 / 1024.0;
+
+        //float DistFromID = 1 - abs(FreqElement - FreqSpectrum) / 100;
+        //  float TargetHeight = (Spectrum[SpectrumID])* 200;
+
+     /*   float dat = abs(VolumeData[SpectrumID]);
+        dat *= dat;
+        if (dat < Radius)
+            dat *= 5;*/
+
+        //float Sp = abs(log2(SpectrumData[SpectrumID]+1));
+     //   float Sp = abs(log2(1-0.75*SpectrumData[SpectrumID]));
+        float Sp = (0.75 * sqrt(RMSVolume) + 0.25) * sqrt(SpectrumData[SpectrumID])*sqrt(1.0+(float)SpectrumID*7.5);
+      //  float Sp = (0.25 * sqrt(RMSVolume) + 0.75) * sqrt(SpectrumData[SpectrumID])*((SpectrumID<500)?0:1);//*sqrt(1024-(float)SpectrumID);
+        
+        /*if (Sp*1000 < MaxHeight)
+            Sp *= Radius;*/
+       // Sp *= 10;
+       /* if (Sp < InnerRadHeight)
+            Sp = 0;*/
+        float TargetHeight = Sp* Radius * Value;
+        
+        //float TargetHeight = (Spectrum[SpectrumID])* 2048;
+        //TargetHeight = TargetHeight * TargetHeight;
+
+       /* if (TargetHeight > MaxHeight)
+            TargetHeight = MaxHeight;*/
+        //float TargetHeight = log2(Spectrum[SpectrumID]);
+        //float TargetHeight =clamp( log2(Spectrum[SpectrumID])*0.25,-1.0,1.0);
+      /*  if(SpectrumID>512)
+            TargetHeight = 0;*/
+       /* if (abs(TargetHeight) < Radius)
+            TargetHeight = 0;
+       */
+
+        if (element.Running<=0)
+        {
+            if (TargetHeight > 0)
+                element.Running = 0.02;
+            element.Height = TargetHeight;
+        }
+
+        if(element.Running >0 && TargetHeight>element.Height)
+            element.Height = TargetHeight;
+        if (element.Height > 200.0)
+            element.Height = 200.0;
+   // }
+    
+    
+    element.Running -= DeltaTime;
+    /*else 
+        TargetHeight =20;*/
+
+   // pos.y = TargetHeight * 15 + TargetPosDefault;
+   // pos.y += (TargetHeight- DistFromID*10 + TargetPosDefault - pos.y) * DeltaTime*((pos.y>TargetHeight)?2: 25);
+    pos.y += (element.Height - pos.y) * DeltaTime*((pos.y> element.Height)?2: 12);
+    //pos.y += (TargetPosDefault* SpectrumID - pos.y) * DeltaTime * 1.5;
+    element.Position = pos;
+    element.Proximity = pos.y / 150.0;
+    GridElements[id.x] = element;
+}
+
+ 

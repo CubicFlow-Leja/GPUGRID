@@ -3,7 +3,7 @@ Shader "Leja/GridShader"
   
     SubShader
     {
-        Tags {"Queue" = "Geometry" "LightMode" = "ForwardBase"  }
+        Tags {"Queue" = "Geometry"  }
         LOD 100
         Pass
         {
@@ -14,9 +14,9 @@ Shader "Leja/GridShader"
             #pragma fragment frag
             #pragma target 5.0
             #include "UnityCG.cginc"
-            #include "AutoLight.cginc"
+           // #include "AutoLight.cginc"
 
-            #pragma multi_compile_fwdbase nolightmap nodirlightmap nodynlightmap novertexlight
+           // #pragma multi_compile_fwdbase nolightmap nodirlightmap nodynlightmap novertexlight
             struct GridElement {
                 float3 Position;
                 float Proximity;
@@ -39,9 +39,9 @@ Shader "Leja/GridShader"
             struct g2f
             {
                 half4 pos : SV_POSITION;
-                half Atten:TEXCOORD0;
+               // half Atten:TEXCOORD0;
                 half Proximity:TEXCOORD1;
-               SHADOW_COORDS(2)
+              // SHADOW_COORDS(2)
             };
 
             //PARAMS
@@ -68,8 +68,8 @@ Shader "Leja/GridShader"
                 g2f OUT;
                 OUT.Proximity = Prox;
                 OUT.pos = UnityObjectToClipPos(v0 + Dir * Scale);
-                OUT.Atten = (dot(normalize(mul(unity_ObjectToWorld, float4(Normal, 1))), _WorldSpaceLightPos0) + 1) / 2;
-                TRANSFER_SHADOW(OUT);
+              //  OUT.Atten = (dot(normalize(mul(unity_ObjectToWorld, float4(Normal, 1))), _WorldSpaceLightPos0) + 1) / 2;
+               // TRANSFER_SHADOW(OUT);
                 return OUT;
             }
 
@@ -83,7 +83,7 @@ Shader "Leja/GridShader"
                 half3 Perp3 = normalize(half3(cos(PI *2/ 3) , 0, sin(PI / 3)));
 
                 half3 vUp = IN[0].vertex.xyz;
-                half3 vDown = IN[0].vertex.xyz + float3(0, -9, 0);
+                half3 vDown = IN[0].vertex.xyz + float3(0, -40, 0);
                 half3 Up = half3(0, 1, 0);
 
                 half Prox = IN[0].Proximity;
@@ -167,9 +167,10 @@ Shader "Leja/GridShader"
 
             fixed4 frag (g2f i) : SV_Target
             {
-                half shadow = SHADOW_ATTENUATION(i);
-                fixed4 COLOR = lerp(_Color, _ProximityCol*5, i.Proximity);
-                fixed4 col = COLOR * shadow*((i.Atten>0.5)?1.05:0.95);
+               // half shadow = SHADOW_ATTENUATION(i);
+                fixed4 COLOR = lerp(_Color, _ProximityCol, i.Proximity* i.Proximity);
+                fixed4 col = COLOR;
+               // fixed4 col = COLOR * shadow*((i.Atten>0.5)?1.05:0.95);
                 return col;
             }
             ENDCG
@@ -248,7 +249,7 @@ Shader "Leja/GridShader"
                 half3 Perp3 = normalize(half3(cos(PI * 2 / 3), 0, sin(PI / 3)));
 
                 half3 vUp = IN[0].vertex.xyz;
-                half3 vDown = IN[0].vertex.xyz + float3(0, -9, 0);
+                half3 vDown = IN[0].vertex.xyz + float3(0, -40, 0);
                 half3 Up = half3(0, 1, 0);
 
                 //turn to function, this is messy
